@@ -1,0 +1,61 @@
+<!-- ====================================================== -->
+<!-- Display Short-Burst page with 2 areas (left and right) -->
+<!-- ====================================================== -->
+<div id="main" class="columnized colscheme-3-1st-narrow">
+
+    <script type="text/javascript" src="{{ deploy_context | safe }}/static/js/bursts.js?{{ currentVersionJS }}"></script>
+    <!--! We need projectTree.js for the Results TAB. -->
+    <script type="text/javascript" src="{{ deploy_context | safe }}/static/js/projectTree.js?{{ currentVersionJS }}"></script>
+    <script type="text/javascript" src="{{ deploy_context | safe }}/static/js/filters.js?{{ currentVersionJS }}"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            initBurstConfiguration('{{ burstConfig.id if (burstConfig.id != None) else ""  }}', '{{ burstConfig.name if (burstConfig.name != None) else ""  }}', '{{ burstConfig.selected_tab }}');
+        });
+    </script>
+
+    <!--! Select from Burst History -->
+    <section id="section-view-history" class="view-history view-column col-1">
+        <h4>
+            <mark></mark>
+            History
+        </h4>
+    </section>
+
+    <!--! Configure Simulation -->
+    <section id="section-simulator-main" class="edit-simulator view-column col-2 is-created">
+        <h4><span id="title-simulation"><mark>Configure</mark> New simulation core</span></h4>
+
+        <div id="div-simulator-parameters">
+            <div class="adaptersDiv">
+                {% include 'simulator_fragment.html' %}
+            </div>
+        </div>
+    </section>
+
+    <!--! Visualize results -->
+    <section id="section" class="view-column col-3">
+        <h4>
+            <mark>Visualize</mark>
+            <span id="title-visualizers">New simulation</span></h4>
+
+        <ul id="section-ul" class="view-switcher tabswitcher">
+            <li class="active">
+                {% set currentBurstID = burstConfig.id if burstConfig.id else undefined %}
+                <a href="#" id="tab-burst-tree"
+                   onclick="displayBurstTree({{ currentBurstID }});">Results</a>
+            </li>
+        </ul>
+        
+        <div class="specialviewer visible-2-2" id="div-burst-tree" style="display: none;">
+            <div id="treeOverlay"></div>
+        </div>
+    </section>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        renderAllSimulatorForms('{{ renderer.FIRST_FORM_URL }}', '{{ renderer.last_form_url }}');
+    });
+</script>
+

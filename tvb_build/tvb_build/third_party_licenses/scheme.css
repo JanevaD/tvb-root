@@ -1,0 +1,119 @@
+/**
+ * TheVirtualBrain-Framework Package. This package holds all Data Management, and
+ * Web-UI helpful to run brain-simulations. To use it, you also need to download
+ * TheVirtualBrain-Scientific Package (for simulators). See content of the
+ * documentation-folder for more details. See also http://www.thevirtualbrain.org
+ *
+ * (c) 2012-2024, Baycrest Centre for Geriatric Care ("Baycrest") and others
+ *
+ * This program is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License along with this
+ * program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ **/
+
+/* -------------------------------------------- */
+/* The Virtual Brain: System */
+/* -------------------------------------------- */
+/* Created by @twotribes, Stuttgart */
+/* -------------------------------------------- */
+/* StyleSheet Scope: GENERAL OVERLAY WINDOWS */
+/* Version: Odinson / 2.9.0 */
+/* -------------------------------------------- */
+
+/* !-------------------------------------------- */
+/* !GENERAL: Overlay box */
+/* !-------------------------------------------- */
+
+html {
+    background: #e8e3d7;
+    color: #656252;
+    font-family: "Helvetica", "Arial", sans-serif;
+    font-size: small;
+    text-decoration: none;
+}
+
+body, h1, h2, h3, h4, p {
+    margin: 0;
+    padding: 0;
+}
+
+ul, ol, li, dl, dt, dd {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+a {
+    border-bottom: 1px solid transparent;
+    color: #2d87b1;
+    font-weight: bold;
+    outline: 0; /* tames Firefox' annoying outlines */
+    text-decoration: none;
+}
+
+a:hover {
+    border-bottom: 1px dotted #000;
+    color: #000;
+    text-decoration: none;
+}
+
+div.document {
+	font-family: "New Century Schoolbook", "Century Schoolbook", "Georgia", "Times", serif;
+	position: static;
+	top: 52px;
+	border-bottom: 2px solid #656252;
+	margin-bottom: 10px;
+	padding-bottom: 10px;
+	clear:both;
+	background: transparent url("back_brain.png") center 35px no-repeat;
+	margin: 0 auto 0 auto;
+	min-height: 757px;
+	padding: 0 0 0 0;
+	width: 1000px;
+}
+
+.tvb * {
+	margin-left: 100px;
+}
+
+.document p {
+	margin-bottom: 10px;
+	margin-left: 100px;
+	font-size: small;
+}
+
+h1 {
+	background: none;
+	color: #2d87b1;
+	float: left;
+	height: auto;
+	letter-spacing: -1px;
+	margin: 50px 0 10px 0;
+	text-indent: 0;
+	text-transform: uppercase;
+	width: 100%;
+	font-size: 24px;
+	margin-top: 123px;
+	overflow: hidden;
+	font-family: "Helvetica", "Arial", sans-serif;
+}
+
+h2 {
+	margin-bottom: 10px;
+	font-size: small;
+	width: 100%
+}
+
+.footer {
+	margin-bottom: 10px;
+	font-size: 14px;
+	width: 100%;
+	text-align: center;
+	border: none;
+}

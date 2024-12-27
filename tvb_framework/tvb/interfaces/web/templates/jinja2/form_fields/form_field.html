@@ -1,0 +1,22 @@
+{% import 'form_fields/generate_help_tooltip.html' as ght with context %}
+
+<fieldset>
+    <dl>
+        {% for field in adapter_form.fields %}
+            <dt {% if field.label_classes %} class="{{ field.label_classes|join(' ') }}" {% endif %}>
+                <label for="{{ field.name }}">{{ field.label }}</label>
+                {% if field.doc %}
+                    {{ ght.generate_help_tooltip(field.label, field.doc) }}
+                {% endif %}
+            </dt>
+            <dd>
+                {{ field | safe }}
+                <p class="errorMessage">
+                    {% for error in field.errors %}
+                        <span> {{ error }} </span>
+                    {% endfor %}
+                </p>
+            </dd>
+        {% endfor %}
+    </dl>
+</fieldset>

@@ -1,0 +1,13 @@
+{% macro generate_help_tooltip(label, doc) %}
+    {% if showOnlineHelp and doc and not isCallout %}
+        <nav class="inline-menu helper">
+            <a href="#" title="Need help? Click here to get more details" class="helper-hook action-menu">?</a>
+            <div class="extension">
+                <div class="dropdown-pane">
+                    <mark>{{ label }}</mark>
+                    <div class="dropdown-pane-overlay">{{ doc|safe }}</div>
+                </div>
+            </div>
+        </nav>
+    {% endif %}
+{% endmacro %}
