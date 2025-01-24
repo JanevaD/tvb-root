@@ -72,6 +72,7 @@ class ModelsEnum(Enum):
     ZERLAUT_SECOND_ORDER = "ZerlautAdaptationSecondOrder"
     MONTBRIO_PAZO_ROXIN = "MontbrioPazoRoxin"
     MPRDOPA = "MPRDopa"
+    IZIMF = "IziMF"
     COOMBES_BYRNE = "CoombesByrne"
     COOMBES_BYRNE_2D = "CoombesByrne2D"
     GAST_SCHMIDT_KNOSCHE_SD = "GastSchmidtKnosche_SD"
@@ -113,7 +114,7 @@ _module_models = {
     'wong_wang': [ModelsEnum.REDUCED_WONG_WANG],
     'wong_wang_exc_inh': [ModelsEnum.REDUCED_WONG_WANG_EXC_INH, ModelsEnum.DECO_BALANCED_EXC_INH],
     'zerlaut': [ModelsEnum.ZERLAUT_FIRST_ORDER, ModelsEnum.ZERLAUT_SECOND_ORDER],
-    'infinite_theta': [ModelsEnum.MONTBRIO_PAZO_ROXIN, ModelsEnum.COOMBES_BYRNE, ModelsEnum.COOMBES_BYRNE_2D, ModelsEnum.GAST_SCHMIDT_KNOSCHE_SF, ModelsEnum.GAST_SCHMIDT_KNOSCHE_SD, ModelsEnum.DUMONT_GUTKIN, ModelsEnum.MPRDOPA],
+    'infinite_theta': [ModelsEnum.MONTBRIO_PAZO_ROXIN, ModelsEnum.COOMBES_BYRNE, ModelsEnum.COOMBES_BYRNE_2D, ModelsEnum.GAST_SCHMIDT_KNOSCHE_SF, ModelsEnum.GAST_SCHMIDT_KNOSCHE_SD, ModelsEnum.DUMONT_GUTKIN, ModelsEnum.MPRDOPA, ModelsEnum.IZIMF],
     'k_ion_exchange': [ModelsEnum.K_ION_EXCHANGE],
 }
 

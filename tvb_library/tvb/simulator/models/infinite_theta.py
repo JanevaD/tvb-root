@@ -37,6 +37,289 @@ from tvb.basic.neotraits.api import NArray, List, Range, Final
 import numpy
 
 
+class IziMF(Model):
+    r"""
+    4D model describing the behavier of all-to-all coupled IK Neurons
+
+    The two state variables :math:`r` and :math:`v` represent the average
+    firing rate and the average membrane potential all IK neurons.
+    :math: 's' reflects the postsynaptic activation of neurons in the network. 
+    :math: 'u' is the global recovery variable. 
+
+    The equations of the population model:
+
+    .. math::
+            To replace
+    
+    Input from the network enters in the :math:`V` variable as 
+    :math:`1/\tau(c_r C_r + c_v C_V)` where C is the incomming coupling. In 
+    other words, depending on the parameters :math:`c_r`, :math:`c_v` we couple
+    the neural masses via the firing rate and/or the membrane potential.
+    
+    ..
+    """
+
+
+    Delta = NArray(
+        label=r":math:`\Delta`",
+        default=numpy.array([2.5]),
+        domain=Range(lo=0.0, hi=2.5, step=0.01),
+        doc=""" """,
+    )
+
+    eta = NArray(
+        label=r":math:`\eta`",
+        default=numpy.array([10.0]),
+        domain=Range(lo=-10.0, hi=20.0, step=0.01),
+        doc="""Constant parameter to scale the rate of feedback from the
+            firing rate variable to itself""",
+    )
+
+    C = NArray(
+        label=r":math:`c`",
+        default=numpy.array([100]),
+        domain=Range(lo=0.0, hi=100.0, step=0.01),
+        doc="""""",
+    )
+
+    k = NArray(
+        label=":math:`k`",
+        default=numpy.array([0.7]),
+        domain=Range(lo=0.0, hi=0.7, step=0.01),
+        doc="""""",
+    )
+
+    v_r = NArray(
+        label=r":math:`v_r`",
+        default=numpy.array([-60]),
+        domain=Range(lo=-100.0, hi=0.0, step=0.001),
+        doc="""""",
+    )
+
+    v_t = NArray(
+        label=r":math:`v_t`",
+        default=numpy.array([-40.0]),
+        domain=Range(lo=-100, hi=0.0, step=0.1),
+        doc="""Eg""",
+    )
+
+    ga = NArray(
+        label=r":math:`ga`",
+        default=numpy.array([15.0]),
+        domain=Range(lo=1., hi=20.0, step=0.01),
+        doc="""""",
+    )
+
+    gg = NArray(
+        label=r":math:`gg`",
+        default=numpy.array([15.0]),
+        domain=Range(lo=1., hi=20.0, step=0.01),
+        doc="""""",
+    )
+
+    E_r = NArray(
+        label=r":math:`\E_r`",
+        default=numpy.array([0.0]),
+        domain=Range(lo=-1., hi=10.0, step=0.01),
+        doc="""""",
+    )
+
+    b = NArray(
+        label=r":math:`b`",
+        default=numpy.array([-2.0]),
+        domain=Range(lo=-3.0, hi=2., step=.0001),
+        doc=""" """,
+    )
+
+    a = NArray(
+        label=r":math:`a`",
+        default=numpy.array([0.03]),
+        domain=Range(lo=.0001, hi=2., step=.0001),
+        doc=""" """,
+    )
+    d = NArray(
+        label=r":math:`d`",
+        default=numpy.array([10.0]),
+        domain=Range(lo=-20., hi=100., step=1.),
+        doc="""ud""",
+    )
+
+    tausa = NArray(
+        label=r":math:`\alpha`",
+        default=numpy.array([6.0]),
+        domain=Range(lo=0.0, hi=8.0, step=.001),
+        doc="""alpha""",
+    )
+    tausg = NArray(
+        label=r":math:`\alpha`",
+        default=numpy.array([6.0]),
+        domain=Range(lo=0.0, hi=8.0, step=.001),
+        doc="""alpha""",
+    )
+    j = NArray(
+        label=r":math:`S`",
+        default=numpy.array([15.0]),
+        domain=Range(lo=.0001, hi=2., step=.0001),
+        doc="""Sja""",
+    )
+    sja = NArray(
+        label=r":math:`S`",
+        default=numpy.array([.0008]),
+        domain=Range(lo=.0001, hi=2., step=.0001),
+        doc="""Sja""",
+    )
+
+    sjg = NArray(
+        label=r":math:`S`",
+        default=numpy.array([0.0012]),
+        domain=Range(lo=.0001, hi=2., step=.0001),
+        doc="""Sjg""",
+    )
+    I = NArray(
+        label=":math:`I_{ext}`",
+        default=numpy.array([0.0]),
+        domain=Range(lo=-10.0, hi=10.0, step=0.01),
+        doc="""External Current""",
+    )
+    Vmax = NArray(
+        label=r":math:`V_{max}`",
+        default=numpy.array([1300.]),
+        domain=Range(lo=1000., hi=1500., step=1.),
+        doc="""Characteristic time""",
+    )
+    Km = NArray(
+        label=r":math:`K_m`",
+        default=numpy.array([150.]),
+        domain=Range(lo=100., hi=300., step=1.),
+        doc="""Dissociation constant""",
+    )
+
+    tauDp = NArray(
+        label=r":math:`\tau_{Dp}`",
+        default=numpy.array([500.0]),
+        domain=Range(lo=100., hi=1000.0, step=1.),
+        doc="""Characteristic time""",
+    )
+    # Informational attribute, used for phase-plane and initial()
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={"r": numpy.array([0., 5.0]),
+                 "v": numpy.array([-100.0, 0.]),
+                 "u": numpy.array([-10., 10.0]),
+                 "sa": numpy.array([-10., 10.0]),
+                 "sg": numpy.array([-10., 10.0]),
+                 "Dp": numpy.array([-10., 10.0])},
+
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    state_variable_boundaries = Final(
+        label="State Variable boundaries [lo, hi]",
+        default={
+            "r": numpy.array([0.0, numpy.inf])
+        },
+    )
+
+    # TODO should match cvars below..
+    coupling_terms = Final(
+        label="Coupling terms",
+        # how to unpack coupling array
+        default=["Coupling_Term_r", "Coupling_Term_v", "Coupling_Term_u", "Coupling_Term_sa", "Coupling_term_sg", "Coupling_term_Dp"]
+    )
+    ('r', 'v', 'u', 'sa', 'sg', 'Dp')
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "r": "Delta * k**2 * abs(v - v_r) / (numpy.pi * C) + r * (k * (2.0 * v - v_r - v_t) - ga * sa - gg * sg ) / C",
+            "v": "(k * v * (v - v_r - v_t) - C * numpy.pi * r * (Delta * numpy.sign(v-v_r) + numpy.pi * C * r / k)+ k * v_r * v_t + ga * sa* (E_r - v) + gg * sg* (E_r - v) + I + eta - u) / C",
+            "u": "a*(b*(v-v_r)-u)+d*r",
+            "sa": "-sa/tausa + r* c_exc",
+            "sg": "-sg/tausg + r* c_inh",
+            'Dp' : "(k * c_dopa - Vmax * Dp / (Km + Dp)) / tauDp"
+        }
+    )
+
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables or quantities available to Monitors",
+        choices=('r', 'v', 'u', 'sa', 'sg'),
+        default=("r", "v"),
+        doc="The quantities of interest for monitoring for the mean-field derivation of Izhikevich spiking network.",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default='Delta C k v_r v_t ga gg E_r b a d tausa tausg j sja sjg I Vmax Km tauDp'.split())
+
+
+
+    state_variables = ('r', 'v', 'u', 'sa', 'sg', 'Dp')
+    _nvar = 6
+    # Cvar is the coupling variable. 
+    cvar = numpy.array([0, 1, 0, 0, 0], dtype=numpy.int32)
+    # Stvar is the variable where stimulus is applied.
+    stvar = numpy.array([1], dtype=numpy.int32)
+
+    
+
+
+    def dfun(self, state_variables, coupling, local_coupling=0.0):
+        r"""
+            2D model describing the Ott-Antonsen reduction of infinite all-to-all
+            coupled QIF neurons (Theta-neurons) as in [Montbrio_Pazo_Roxin_2015]_.
+
+            The two state variables :math:`r` and :math:`V` represent the average
+            firing rate and the average membrane potential of our QIF neurons.
+
+            The equations of the infinite QIF 2D population model read
+
+            .. math::
+                    \dot{r} &= 1/\tau (\Delta/(\pi \tau) + 2 V r)\\
+                    \dot{V} &= 1/\tau (V^2 - \tau^2 \pi^2 r^2 + \eta + J \tau r + I)
+        """
+
+        r, v, u, sa, sg = state_variables
+
+        # [State_variables, nodes]
+
+        Delta = self.Delta
+        C = self.C
+        k = self.k
+        v_r = self.v_r
+        v_t = self.v_t
+        ga = self.ga
+        gg = self.gg
+        E_r = self.E_r
+        b = self.b
+        a = self.a
+        d = self.d
+        j = self.j
+        sja = self.sja
+        sjg = self.sjg
+        tausa = self.tausa
+        tausg = self.tausg
+        I = self.I
+        Km = self.Km
+        tauDp = self.tauDp
+    
+        
+        c_inh, c_exc, c_dopa = coupling  # This zero refers to the second element of cvar (V in this case)
+
+        derivative = numpy.empty_like(state_variables)
+        r, v, u, sa, sg, Dp = state_variables
+        derivative[0] = Delta * k**2 * abs(v - v_r) / (numpy.pi * C) + r * (k * (2.0 * v - v_r - v_t) - ga * sa - gg * sg ) / C, # here maybe pi*C^2
+        derivative[1] = (k * v * (v - v_r - v_t) - C * numpy.pi * r * (Delta * numpy.sign(v - v_r) + numpy.pi * C * r / k)+ k * v_r * v_t + ga * sa* (E_r - v) + gg * sg* (E_r - v) + I - u) / C,
+        derivative[2] = a * (b * (v - v_r) - u) + d* r,
+        derivative[3] = -sa/tausa + j * r + sja* c_exc,
+        derivative[4] = -sg/tausg + j * r + sjg* c_inh,
+        derivative[5] = (k * c_dopa - Vmax * Dp / (Km + Dp)) / tauDp
+       
+        return derivative
+
+
 class MPRDopa(Model):
     r"""
     6D model describing the behavier of all-to-all coupled aQIF neurons (Theta-neurons)
