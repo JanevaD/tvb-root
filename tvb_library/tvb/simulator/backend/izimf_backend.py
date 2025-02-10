@@ -99,7 +99,7 @@ class IZIMFBackend(object):
 @jit
 def izimf_dfun(X, coupling, pars):
     c_inh,c_exc,c_dopa = coupling 
-    print(c_inh,c_exc,c_dopa)
+    #print(c_inh,c_exc,c_dopa)
     Delta, C, k, v_r, v_t, ga, gg, E_r, b, a, kappa, tausa, tausg, sja, sjg, eta, I, Vmax, Km, tauDp = pars
 
     r, v, u, sa = X[0,:], X[1,:], X[2,:], X[3,:]
@@ -141,7 +141,7 @@ def run_sim_plain(dfun, pars, X0, dW, dt, conn_e, conn_i, conn_d, g_e, g_i, g_d,
         inter = X + dt * m_dx_tn + dw
         dX = (m_dx_tn + dfun(inter, coupling, pars)) * dt / 2.0
         X = X + dX + dw
-        print(X)
+        #print(X)
         X = izmf_positive(X)
         t += dt
         if  (count % 10)==0 and (i< (t_all.shape[0]-1)):
