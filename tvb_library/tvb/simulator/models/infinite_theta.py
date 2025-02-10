@@ -62,7 +62,7 @@ class IziMF(Model):
 
     Delta = NArray(
         label=r":math:`\Delta`",
-        default=numpy.array([2.5]),
+        default=numpy.array([0.5]),
         domain=Range(lo=0.0, hi=2.5, step=0.01),
         doc=""" """,
     )
@@ -77,7 +77,7 @@ class IziMF(Model):
 
     C = NArray(
         label=r":math:`c`",
-        default=numpy.array([100]),
+        default=numpy.array([100.0]),
         domain=Range(lo=0.0, hi=100.0, step=0.01),
         doc="""""",
     )
@@ -137,9 +137,9 @@ class IziMF(Model):
         domain=Range(lo=.0001, hi=2., step=.0001),
         doc=""" """,
     )
-    d = NArray(
+    kappa = NArray(
         label=r":math:`d`",
-        default=numpy.array([10.0]),
+        default=numpy.array([100.0]),
         domain=Range(lo=-20., hi=100., step=1.),
         doc="""ud""",
     )
@@ -156,28 +156,30 @@ class IziMF(Model):
         domain=Range(lo=0.0, hi=8.0, step=.001),
         doc="""alpha""",
     )
-    j = NArray(
-        label=r":math:`S`",
-        default=numpy.array([15.0]),
-        domain=Range(lo=.0001, hi=2., step=.0001),
-        doc="""Sja""",
-    )
+
+
     sja = NArray(
         label=r":math:`S`",
-        default=numpy.array([.0008]),
+        default=numpy.array([0.0]),
         domain=Range(lo=.0001, hi=2., step=.0001),
         doc="""Sja""",
     )
 
     sjg = NArray(
         label=r":math:`S`",
-        default=numpy.array([0.0012]),
+        default=numpy.array([10.0]),
         domain=Range(lo=.0001, hi=2., step=.0001),
         doc="""Sjg""",
     )
-    I = NArray(
+    eta = NArray(
         label=":math:`I_{ext}`",
         default=numpy.array([0.0]),
+        domain=Range(lo=-10.0, hi=10.0, step=0.01),
+        doc="""External Current""",
+    )
+    I = NArray(
+        label=":math:`I_{ext}`",
+        default=numpy.array([40.0]),
         domain=Range(lo=-10.0, hi=10.0, step=0.01),
         doc="""External Current""",
     )
@@ -206,9 +208,7 @@ class IziMF(Model):
         default={"r": numpy.array([0., 5.0]),
                  "v": numpy.array([-100.0, 0.]),
                  "u": numpy.array([-10., 10.0]),
-                 "sa": numpy.array([-10., 10.0]),
-                 "sg": numpy.array([-10., 10.0]),
-                 "Dp": numpy.array([-10., 10.0])},
+                 },
 
         doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
     )
@@ -224,9 +224,9 @@ class IziMF(Model):
     coupling_terms = Final(
         label="Coupling terms",
         # how to unpack coupling array
-        default=["Coupling_Term_r", "Coupling_Term_v", "Coupling_Term_u", "Coupling_Term_sa", "Coupling_term_sg", "Coupling_term_Dp"]
+        default=["Coupling_Term_r", "Coupling_Term_v", "Coupling_Term_u", "Coupling_Term_sa"]
     )
-    ('r', 'v', 'u', 'sa', 'sg', 'Dp')
+    ('r', 'v', 'u', 'sa')
 
     state_variable_dfuns = Final(
         label="Drift functions",
@@ -235,8 +235,7 @@ class IziMF(Model):
             "v": "(k * v * (v - v_r - v_t) - C * numpy.pi * r * (Delta * numpy.sign(v-v_r) + numpy.pi * C * r / k)+ k * v_r * v_t + ga * sa* (E_r - v) + gg * sg* (E_r - v) + I + eta - u) / C",
             "u": "a*(b*(v-v_r)-u)+d*r",
             "sa": "-sa/tausa + r* c_exc",
-            "sg": "-sg/tausg + r* c_inh",
-            'Dp' : "(k * c_dopa - Vmax * Dp / (Km + Dp)) / tauDp"
+
         }
     )
 
@@ -244,7 +243,7 @@ class IziMF(Model):
     variables_of_interest = List(
         of=str,
         label="Variables or quantities available to Monitors",
-        choices=('r', 'v', 'u', 'sa', 'sg'),
+        choices=('r', 'v', 'u', 'sa'),
         default=("r", "v"),
         doc="The quantities of interest for monitoring for the mean-field derivation of Izhikevich spiking network.",
     )
@@ -252,14 +251,14 @@ class IziMF(Model):
     parameter_names = List(
         of=str,
         label="List of parameters for this model",
-        default='Delta C k v_r v_t ga gg E_r b a d tausa tausg j sja sjg I Vmax Km tauDp'.split())
+        default='Delta C k v_r v_t ga gg E_r b a kappa tausa tausg sja sjg eta I Vmax Km tauDp'.split())
 
 
 
-    state_variables = ('r', 'v', 'u', 'sa', 'sg', 'Dp')
-    _nvar = 6
+    state_variables = ('r', 'v', 'u', 'sa')
+    _nvar = 4
     # Cvar is the coupling variable. 
-    cvar = numpy.array([0, 1, 0, 0, 0], dtype=numpy.int32)
+    cvar = numpy.array([0, 1, 0, 0], dtype=numpy.int32)
     # Stvar is the variable where stimulus is applied.
     stvar = numpy.array([1], dtype=numpy.int32)
 
@@ -281,7 +280,7 @@ class IziMF(Model):
                     \dot{V} &= 1/\tau (V^2 - \tau^2 \pi^2 r^2 + \eta + J \tau r + I)
         """
 
-        r, v, u, sa, sg = state_variables
+        r, v, u, sa= state_variables
 
         # [State_variables, nodes]
 
@@ -295,8 +294,6 @@ class IziMF(Model):
         E_r = self.E_r
         b = self.b
         a = self.a
-        d = self.d
-        j = self.j
         sja = self.sja
         sjg = self.sjg
         tausa = self.tausa
@@ -304,6 +301,10 @@ class IziMF(Model):
         I = self.I
         Km = self.Km
         tauDp = self.tauDp
+        Vmax = self.Vmax
+        eta = self.eta
+        kappa = self.kappa
+        
     
         
         c_inh, c_exc, c_dopa = coupling  # This zero refers to the second element of cvar (V in this case)
@@ -312,10 +313,9 @@ class IziMF(Model):
         r, v, u, sa, sg, Dp = state_variables
         derivative[0] = Delta * k**2 * abs(v - v_r) / (numpy.pi * C) + r * (k * (2.0 * v - v_r - v_t) - ga * sa - gg * sg ) / C, # here maybe pi*C^2
         derivative[1] = (k * v * (v - v_r - v_t) - C * numpy.pi * r * (Delta * numpy.sign(v - v_r) + numpy.pi * C * r / k)+ k * v_r * v_t + ga * sa* (E_r - v) + gg * sg* (E_r - v) + I - u) / C,
-        derivative[2] = a * (b * (v - v_r) - u) + d* r,
-        derivative[3] = -sa/tausa + j * r + sja* c_exc,
-        derivative[4] = -sg/tausg + j * r + sjg* c_inh,
-        derivative[5] = (k * c_dopa - Vmax * Dp / (Km + Dp)) / tauDp
+        derivative[2] = a * (b * (v - v_r) - u) + kappa* r,
+        derivative[3] = -sa/tausa + sja * r + sja* c_exc,
+  
        
         return derivative
 
@@ -620,7 +620,7 @@ class MPRDopa(Model):
         derivative[0] = 2. * a * r * V + b * r - (Ad * Dp + Bd)* ga * Sa * r - gg * Sg * r + (a * Delta) / numpy.pi,
         derivative[1] = a * V**2 + b * V + c + eta - (numpy.pi**2 * r**2) / a + (Ad * Dp + Bd) * ga * Sa * (Ea - V) + gg * Sg * (Eg - V) + I - u,
         derivative[2] = alpha * (beta * V - u) + ud * r,
-        derivative[3] = -Sa / tauSa + Sja * c_exc,
+        derivative[3] = -Sa / tauSa + Sja  * c_exc,
         derivative[4] = -Sg / tauSg + Sjg * c_inh,
         derivative[5] = (k * c_dopa - Vmax * Dp / (Km + Dp)) / tauDp
 

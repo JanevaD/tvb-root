@@ -98,9 +98,11 @@ class DOPABackend(object):
 @jit
 def dopa_dfun(X, coupling, pars):
     c_inh, c_exc, c_dopa = coupling  # This zero refers to the second element of cvar (V in this case)
+    print(c_inh, c_exc, c_dopa)
     a,b,c,ga,gg,eta,Delta,I,Ea,Eg,Sja,Sjg,tauSa,tauSg,alpha,beta,ud,k,Vmax,Km,Bd,Ad,tauDp = pars
     # not change a, b, c, Sja, Sjg, tauSa, tauSg, Vmax
     r, V, u, Sa, Sg, Dp = X[0,:], X[1,:], X[2,:], X[3,:], X[4,:], X[5,:]
+    print(r, V, u, Sa, Sg, Dp)
     derivative = np.stack((2. * a * r * V + b * r - (Ad * Dp + Bd)* ga * Sa * r - gg * Sg * r + (a * Delta) / np.pi,
     a * V**2 + b * V + c + eta - (np.pi**2 * r**2) / a + (Ad * Dp + Bd) * ga * Sa * (Ea - V) + gg * Sg * (Eg - V) + I - u,
     alpha * (beta * V - u) + ud * r,
