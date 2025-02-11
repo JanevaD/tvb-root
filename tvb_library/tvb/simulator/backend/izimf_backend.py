@@ -41,6 +41,7 @@ import autopep8
 from tvb.simulator.lab import *
 from numba import jit
 
+# jit = lambda f: f
 
 class IZIMFBackend(object):
     def check_compatibility(self, sim): 
@@ -78,7 +79,7 @@ class IZIMFBackend(object):
             dt = sim.integrator.dt
             noise *= noise_gfun * np.sqrt(dt)
             pars = tuple(self._get_par(sim.model, attr_name)[0] for attr_name in sim.model.parameter_names)
-            print(pars)
+            print (pars)
             svar_bufs, c = run_sim_plain(izimf_dfun, pars, sim.initial_conditions, noise, dt, sim.connectivity.weights, conn_i, conn_d, sim.coupling.a, g_i, g_d, nstep, compatibility_mode=compatibility_mode, print_source=print_source)
             time = np.arange(svar_bufs[0].shape[1]) * sim.integrator.dt
         # elif isinstance(sim.monitors[0], monitors.TemporalAverage):
@@ -98,29 +99,28 @@ class IZIMFBackend(object):
 
 @jit
 def izimf_dfun(X, coupling, pars):
-    c_inh,c_exc,c_dopa = coupling 
-    #print(c_inh,c_exc,c_dopa)
-    Delta, C, k, v_r, v_t, ga, gg, E_r, b, a, kappa, tausa, tausg, sja, sjg, eta, I, Vmax, Km, tauDp = pars
+    c_inh,c_exc,c_dopa = coupling  # This zero refers to the second element of cvar (V in this case)
+    
+    Delta,eta, C, k, v_r, v_t, ga, gg, E_r, b, a, kappa, tausa, tausg, sja, sjg, I, Vmax, Km, tauDp, Dp = pars
 
-    r, v, u, sa = X[0,:], X[1,:], X[2,:], X[3,:]
+    r, v, u, sa, sg, dDp = X[0,:], X[1,:], X[2,:], X[3,:], X[4,:], X[5,:]
     #dy0 = Delta * k**2 * np.abs(v - v_r) / (np.pi * C) + r * (k * (2.0 * v - v_r - v_t) - ga * sa - gg * sg ) / C
     #import pdb; pdb.set_trace()
-    derivative = np.stack(((Delta * k**2 * np.abs(v - v_r) / (np.pi * C) + r * (k * (2.0 * v - v_r - v_t) - ga * sa )) / C, 
-    (k * v * (v - v_r - v_t) - C * np.pi * r *(Delta * np.sign(v - v_r)  + np.pi * C * r / k)+ k * v_r * v_t + ga * sa* (E_r - v)  + eta + I  - u) / C,
+    derivative = np.stack(((Delta * k**2 * np.abs(v - v_r) / (np.pi * C) + r * (k * (2.0 * v - v_r - v_t) - ga * sa - gg * sg )) / C, 
+    (k * v * (v - v_r - v_t) - C * np.pi * r *(Delta * np.sign(v - v_r)  + np.pi * C * r / k)+ k * v_r * v_t + ga * sa* (E_r - v) + gg * sg* (E_r - v) + eta + I  - u) / C,
     a*(b * (v - v_r) - u) + kappa * r,
-    -sa/tausa + sja* (r+c_exc)))
-   # -sg/tausg + sjg* c_inh,
-  #  (k * c_dopa - Vmax * Dp / (Km + Dp)) / tauDp))
+    -sa/tausa + sja* (r+c_exc),
+    -sg/tausg + sjg* c_inh,
+    (k * c_dopa - Vmax * Dp / (Km + Dp)) / tauDp))
 
     return derivative
-
 
 @jit
 def run_sim_plain(dfun, pars, X0, dW, dt, conn_e, conn_i, conn_d, g_e, g_i, g_d, nstep=None, compatibility_mode=False, print_source=True):
     connectivities = np.stack((conn_i, conn_e, conn_d))
     X = X0[0,:,:,0]
-    y_all = np.empty((nstep//10,)+X.shape)
-    t_all = np.empty((nstep//10, ))
+    y_all = np.empty((nstep,)+X.shape)
+    t_all = np.empty((nstep, ))
 
     t_all[0] = 0
     y_all[0, :] = X
@@ -144,7 +144,7 @@ def run_sim_plain(dfun, pars, X0, dW, dt, conn_e, conn_i, conn_d, g_e, g_i, g_d,
         #print(X)
         X = izmf_positive(X)
         t += dt
-        if  (count % 10)==0 and (i< (t_all.shape[0]-1)):
+        if  (count % 1)==0 and (i< (t_all.shape[0]-1)):
             i+=1
             t_all[i]=t
             y_all[i,:]= X
@@ -158,10 +158,9 @@ def cx(state_vars, connectivities, g_i, g_e, g_d):
     aff_inhibitor = connectivities[0,...].T @ r * g_i
     aff_excitator = connectivities[1,...].T @ r * g_e
     aff_dopamine = connectivities[2,...].T @ r * g_d
-
     return np.stack((aff_inhibitor, aff_excitator, aff_dopamine))
 
 @jit
 def izmf_positive(X):
-    r, v, u, sa  = X[0,:], X[1,:], X[2,:], X[3,:]
-    return np.concatenate((r*(r>0), v, u, sa*(sa>0))).reshape(X.shape)
+    r, v, u, sa, sg, dDp = X[0,:], X[1,:], X[2,:], X[3,:], X[4,:], X[5,:]
+    return np.concatenate((r*(r>0), v, u, sa*(sa>0), sg*(sg>0), dDp)).reshape(X.shape)
