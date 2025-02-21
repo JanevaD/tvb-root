@@ -41,6 +41,7 @@ import autopep8
 from tvb.simulator.lab import *
 from numba import jit
 
+
 # jit = lambda f: f
 
 class IZIMFBackend(object):
@@ -99,11 +100,12 @@ class IZIMFBackend(object):
 
 @jit
 def izimf_dfun(X, coupling, pars):
-    c_inh,c_exc,c_dopa = coupling  # This zero refers to the second element of cvar (V in this case)
-    
-    Delta,eta, C, k, v_r, v_t, ga, gg, E_r, b, a, kappa, tausa, tausg, sja, sjg, I, Vmax, Km, tauDp, Dp = pars
 
-    r, v, u, sa, sg, dDp = X[0,:], X[1,:], X[2,:], X[3,:], X[4,:], X[5,:]
+    c_inh,c_exc,c_dopa = coupling  # This zero refers to the second element of cvar (V in this case)
+   
+    Delta,eta, C, k, v_r, v_t, ga, gg, E_r, b, a, kappa, tausa, tausg, sja, sjg, I, Vmax, Km, tauDp, Rd, Sd, Z, tauMd = pars
+
+    r, v, u, sa, sg, Dp, Md = X[0,:], X[1,:], X[2,:], X[3,:], X[4,:], X[5,:], X[6,:]
     #dy0 = Delta * k**2 * np.abs(v - v_r) / (np.pi * C) + r * (k * (2.0 * v - v_r - v_t) - ga * sa - gg * sg ) / C
     #import pdb; pdb.set_trace()
     derivative = np.stack(((Delta * k**2 * np.abs(v - v_r) / (np.pi * C) + r * (k * (2.0 * v - v_r - v_t) - ga * sa - gg * sg )) / C, 
@@ -111,7 +113,8 @@ def izimf_dfun(X, coupling, pars):
     a*(b * (v - v_r) - u) + kappa * r,
     -sa/tausa + sja* (r+c_exc),
     -sg/tausg + sjg* c_inh,
-    (k * c_dopa - Vmax * Dp / (Km + Dp)) / tauDp))
+    (k * c_dopa - Vmax * Dp / (Km + Dp)) / tauDp,
+    (-Md + Rd / (1 + np.exp(Sd * (Dp + Z)))) / tauMd))
 
     return derivative
 
@@ -162,5 +165,5 @@ def cx(state_vars, connectivities, g_i, g_e, g_d):
 
 @jit
 def izmf_positive(X):
-    r, v, u, sa, sg, dDp = X[0,:], X[1,:], X[2,:], X[3,:], X[4,:], X[5,:]
-    return np.concatenate((r*(r>0), v, u, sa*(sa>0), sg*(sg>0), dDp)).reshape(X.shape)
+    r, v, u, sa, sg, Dp, Md = X[0,:], X[1,:], X[2,:], X[3,:], X[4,:], X[5,:], X[6,:]
+    return np.concatenate((r*(r>0), v, u, sa*(sa>0), sg*(sg>0), Dp, Md)).reshape(X.shape)

@@ -195,13 +195,34 @@ class IziMF(Model):
         domain=Range(lo=100., hi=1000.0, step=1.),
         doc="""Characteristic time""",
     )
+   
+    Sd = NArray(
+        label=r":math:`Sd`",
+        default=numpy.array([-1.0]), 
+        domain=Range(lo=0.0, hi=1.0, step=0.01),
+        doc="""Characteristic time""",
+    )
 
-    Dp = NArray(
-        label=r":math:`\{Dp}`",
-        default=numpy.array([10.0]),
+    Rd = NArray(
+        label=r":math:`Rd`",
+        default=numpy.array([1.0]),
+        domain=Range(lo=0.0, hi=1.0, step=0.01),
+        doc="""Characteristic time""",
+    )
+
+    Z = NArray(
+        label=r":math:`Z`",
+        default=numpy.array([1.0]),
+        domain=Range(lo=0.0, hi=1.0, step=0.01),
+        doc="""Characteristic time""",
+    )
+
+    tauMd = NArray(
+        label=r":math:`\tau_{Md}`",
+        default=numpy.array([500.0]),
         domain=Range(lo=100., hi=1000.0, step=1.),
         doc="""Characteristic time""",
-    )    
+    )
 
     # Informational attribute, used for phase-plane and initial()
     state_variable_range = Final(
@@ -211,7 +232,8 @@ class IziMF(Model):
                  "u": numpy.array([-10., 10.0]),
                  "sa": numpy.array([-10., 10.0]),
                  "sg": numpy.array([-10., 10.0]),
-                 "dDp": numpy.array([-10., 10.0])},
+                 "Dp": numpy.array([-10., 10.0]),
+                 "Md": numpy.array([-10., 10.0])},
 
         doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
     )
@@ -227,9 +249,9 @@ class IziMF(Model):
     coupling_terms = Final(
         label="Coupling terms",
         # how to unpack coupling array
-        default=["Coupling_Term_r", "Coupling_Term_v", "Coupling_Term_u", "Coupling_Term_sa", "Coupling_term_sg", "Coupling_term_dDp"]
+        default=["Coupling_Term_r", "Coupling_Term_v", "Coupling_Term_u", "Coupling_Term_sa", "Coupling_term_sg", "Coupling_term_Dp", "Coupling_term_Md"]
     )
-    ('r', 'v', 'u', 'sa', 'sg', 'dDp')
+    ('r', 'v', 'u', 'sa', 'sg', 'Dp', "Md")
 
     state_variable_dfuns = Final(
         label="Drift functions",
@@ -239,7 +261,8 @@ class IziMF(Model):
             "u": "a*(b*(v-v_r)-u)+d*r",
             "sa": "-sa/tausa + r* c_exc",
             "sg": "-sg/tausg + r* c_inh",
-            'dDp' : "(k * c_dopa - Vmax * Dp / (Km + Dp)) / tauDp"
+            'Dp' : "(k * c_dopa - Vmax * Dp / (Km + Dp)) / tauDp",
+            "Md": "(-Md + Rd / (1 + numpy.exp(Sd * (Dp + Z)))) / tauMd"
         }
     )
 
@@ -247,7 +270,7 @@ class IziMF(Model):
     variables_of_interest = List(
         of=str,
         label="Variables or quantities available to Monitors",
-        choices=('r', 'v', 'u', 'sa', 'sg', 'dDp'),
+        choices=('r', 'v', 'u', 'sa', 'sg', 'Dp', 'Md'),
         default=("r", "v"),
         doc="The quantities of interest for monitoring for the mean-field derivation of Izhikevich spiking network.",
     )
@@ -255,14 +278,14 @@ class IziMF(Model):
     parameter_names = List(
         of=str,
         label="List of parameters for this model",
-        default='Delta eta C k v_r v_t ga gg E_r b a kappa tausa tausg sja sjg I Vmax Km tauDp Dp'.split())
+        default='Delta eta C k v_r v_t ga gg E_r b a kappa tausa tausg sja sjg I Vmax Km tauDp Rd Sd Z tauMd'.split())
 
 
 
-    state_variables = ('r', 'v', 'u', 'sa', 'sg', 'dDp')
-    _nvar = 6
+    state_variables = ('r', 'v', 'u', 'sa', 'sg', 'Dp', 'Md')
+    _nvar = 7
     # Cvar is the coupling variable. 
-    cvar = numpy.array([0, 1, 0, 0, 0, 0], dtype=numpy.int32)
+    cvar = numpy.array([0, 1, 0, 0, 0, 0, 0], dtype=numpy.int32)
     # Stvar is the variable where stimulus is applied.
     stvar = numpy.array([1], dtype=numpy.int32)
 
@@ -307,20 +330,23 @@ class IziMF(Model):
         Km = self.Km
         tauDp = self.tauDp
         Vmax = self.Vmax
-        Dp = self.Dp
-
-    
+        Sd = self.Sd
+        Rd = self.Rd
+        Z = self.Z
+        tauMd = self.tauMd
         
         c_inh, c_exc, c_dopa = coupling  # This zero refers to the second element of cvar (V in this case)
 
         derivative = numpy.empty_like(state_variables)
-        r, v, u, sa, sg, dDp = state_variables
+        r, v, u, sa, sg, Dp, Md = state_variables
         derivative[0] = Delta * k**2 * abs(v - v_r) / (numpy.pi * C) + r * (k * (2.0 * v - v_r - v_t) - ga * sa - gg * sg ) / C, # here maybe pi*C^2
         derivative[1] = (k * v * (v - v_r - v_t) - C * numpy.pi * r * (Delta * numpy.sign(v - v_r) + numpy.pi * C * r / k)+ k * v_r * v_t + ga * sa* (E_r - v) + gg * sg* (E_r - v) + I - u) / C,
         derivative[2] = a * (b * (v - v_r) - u) + kappa* r,
         derivative[3] = -sa/tausa + j * r + sja* c_exc,
         derivative[4] = -sg/tausg + j * r + sjg* c_inh,
         derivative[5] = (k * c_dopa - Vmax * Dp / (Km + Dp)) / tauDp
+        derivative[6] = (-Md + Rd / (1 + numpy.exp(Sd * (Dp + Z)))) / tauMd
+
        
         return derivative
 
